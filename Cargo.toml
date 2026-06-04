@@ -1,0 +1,11 @@
+[package]
+name = "ternary-search"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Search algorithms over ternary strategy spaces"
+repository = "https://github.com/SuperInstance/ternary-search"
+keywords = ["ternary", "search", "strategy", "beam-search", "astar"]
+categories = ["algorithms", "data-structures"]
+
+[dependencies]
