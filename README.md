@@ -112,3 +112,11 @@ Feeds into `ternary-scoring` (search results become scoring candidates) and `ter
 ## License
 
 MIT
+
+## See Also
+- **ternary-planning** — related
+- **ternary-optimization** — related
+- **ternary-gradient** — related
+- **ternary-compass** — related
+- **ternary-constraint** — related
+
