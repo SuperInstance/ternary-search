@@ -8,21 +8,22 @@
 use std::collections::{BinaryHeap, HashMap, HashSet, VecDeque};
 use std::cmp::Ordering;
 
-/// Ternary value: positive (+1), negative (-1), or neutral (0).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Ternary {
-    Positive,
-    Negative,
-    Neutral,
+/// Canonical ternary type re-exported from `ternary-types`.
+pub use ternary_types::Ternary;
+
+/// Deprecated — use [`Ternary`] directly.
+#[deprecated(since = "0.2.0", note = "use ternary_types::Ternary instead")]
+pub type TernaryDeprecated = Ternary;
+
+/// Extension trait providing the [`value()`](TernaryExt::value) method.
+pub trait TernaryExt {
+    /// Return the numeric value of this ternary state as an `i8`.
+    fn value(&self) -> i8;
 }
 
-impl Ternary {
-    pub fn value(&self) -> i8 {
-        match self {
-            Ternary::Positive => 1,
-            Ternary::Negative => -1,
-            Ternary::Neutral => 0,
-        }
+impl TernaryExt for ternary_types::Ternary {
+    fn value(&self) -> i8 {
+        i8::from(*self)
     }
 }
 
