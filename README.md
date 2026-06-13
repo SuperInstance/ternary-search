@@ -1,95 +1,151 @@
 # ternary-search
 
-**Search algorithms over ternary strategy spaces**
+Search algorithms over **ternary strategy spaces**. Provides binary threshold search, BFS/DFS on strategy graphs, beam search, and A* with fitness heuristics — all operating on graphs where nodes carry ternary signal vectors.
 
-[![ternary](https://img.shields.io/badge/ecosystem-ternary-blue)](https://github.com/orgs/SuperInstance/repositories?q=ternary)
-[![tests](https://img.shields.io/badge/tests-19-green)]()
+## Why It Matters
 
-## Overview
+Strategy spaces in multi-agent systems are naturally ternary: each signal dimension is `+1` (positive), `0` (neutral), or `-1` (negative). Searching these spaces requires algorithms that understand the structure:
 
-Search algorithms over ternary strategy spaces.
+| Algorithm | Use Case |
+|-----------|----------|
+| Binary threshold search | Find the crossover point where a monotone evaluation changes sign |
+| BFS / DFS | Exhaustive exploration of the strategy graph |
+| Beam search | Bounded-width heuristic search (keep top-k) |
+| A* | Optimal pathfinding with admissible heuristic |
+| Shortest path | BFS-based minimum-hop distance |
 
-Provides binary search on thresholds, BFS/DFS on strategy graphs,
-beam search, and A* with fitness heuristics.
+## How It Works
 
-## Architecture
+### Strategy Graph
 
-- **`StrategyNode`** — core data structure
-- **`StrategyGraph`** — core data structure
-- **`BfsResult`** — core data structure
-- **`DfsResult`** — core data structure
-- **`BeamCandidate`** — core data structure
-- **`AStarResult`** — core data structure
-- **`Ternary`** — state enumeration
+A `StrategyGraph` is an adjacency-list graph where each `StrategyNode` carries:
+- `id`: unique identifier
+- `signals: Vec<Ternary>` — the ternary state vector
+- `neighbors: Vec<usize>` — adjacent node IDs
 
-### Key Functions
+Node fitness is the sum of signal values:
 
-- `value()`
-- `new()`
-- `with_signals()`
-- `fitness()`
-- `add_neighbor()`
-- `new()`
-- `add_node()`
-- `add_edge()`
-- `get()`
-- `node_count()`
-- ... and 9 more
-
-## Why Ternary?
-
-The balanced ternary system {-1, 0, +1} (also known as Z₃) is the mathematically optimal discrete encoding:
-- **More expressive than binary**: three states capture positive, neutral, and negative
-- **Natural for decisions**: accept/reject/abstain, buy/hold/sell, agree/disagree/neutral
-- **Self-balancing**: the 0 state acts as a universal screen, preventing pathological lock-in
-- **Z₃ cyclic dynamics**: rock-paper-scissors is the only natural coordination mechanism
-
-## Stats
-
-| Metric | Value |
-|--------|-------|
-| Lines of Rust | 574 |
-| Test count | 19 |
-| Public types | 7 |
-| Public functions | 19 |
-
-## Ecosystem
-
-This crate is part of the **[SuperInstance Ternary Fleet](https://github.com/orgs/SuperInstance/repositories?q=ternary)**:
-
-- **[ternary-core](https://github.com/SuperInstance/ternary-core)** — shared traits and Z₃ arithmetic
-- **[ternary-grid](https://github.com/SuperInstance/ternary-grid)** — spatial grid with {-1, 0, +1} cells
-- **[ternary-graph](https://github.com/SuperInstance/ternary-graph)** — ternary-weighted graph algorithms
-- **[ternary-automata](https://github.com/SuperInstance/ternary-automata)** — three-state cellular automata
-- **[ternary-compiler](https://github.com/SuperInstance/ternary-compiler)** — expression compiler and optimizer
-
-200+ crates. 4,300+ tests. One pattern.
-
-## Research Context
-
-The ternary approach connects to several active research areas:
-- **Ternary Neural Networks** (TNNs): weights constrained to {-1, 0, +1} for efficient inference
-- **Huawei's ternary chip**: 7nm ternary silicon with 60% less power consumption
-- **Active inference**: free energy minimization naturally maps to ternary action selection
-- **Cyclic dominance**: RPS dynamics maintain biodiversity in spatial ecology
-- **Z₃ group theory**: the only algebraic group on three elements is cyclic addition mod 3
-
-## Usage
-
-```toml
-[dependencies]
-ternary-search = "0.1.0"
 ```
+fitness(node) = Σ signalᵢ = Σ value(tᵢ)   where tᵢ ∈ {-1, 0, +1}
+```
+
+### Binary Threshold Search
+
+Finds the smallest integer *x* ∈ [low, high] where `eval(x) ≥ 0`:
+
+```
+while lo < hi:
+    mid = lo + (hi - lo) / 2
+    if eval(mid) ≥ 0: hi = mid
+    else: lo = mid + 1
+```
+
+**Complexity:** O(log(hi - lo)) evaluations. **Space:** O(1).
+
+### BFS and DFS
+
+Standard breadth-first and depth-first traversal. BFS computes shortest-hop distances; DFS produces discovery/finish timestamps for topological analysis.
+
+```
+BFS: visit all neighbors at distance d before d+1
+DFS: visit deepest unvisited neighbor first
+```
+
+**Complexity:** O(V + E) time, O(V) space.
+
+### Beam Search
+
+Maintains at most *B* (beam width) candidates at depth *d*. At each step:
+
+1. Expand all candidates' neighbors → candidate pool
+2. Score each: `score(child) = score(parent) + fitness(child)`
+3. Keep top *B* by score
+
+```
+beam = {start}
+for depth in 0..max_depth:
+    candidates = { expand(c) for c in beam }
+    beam = top_B(candidates, by score)
+    track best
+```
+
+**Complexity:** O(B · d̄ · B) = O(B² · d̄) per depth, where d̄ is average degree. Total: O(B² · D · d̄).
+
+**Trade-off:** Larger *B* → better solutions but exponentially more computation. *B = 1* is greedy; *B → ∞* is BFS.
+
+### A* Search
+
+A* finds the minimum-cost path from start to goal using:
+
+```
+f(n) = g(n) + h(n)
+```
+
+where `g(n)` is the actual cost to reach *n*, and `h(n)` is the heuristic estimate to the goal. With an **admissible** heuristic (never overestimates), A* is guaranteed to find the optimal path.
+
+The implementation uses a `BinaryHeap` (min-heap via inverted `Ord`) with a closed set for visited nodes.
+
+**Complexity:** O((V + E) log V) time with heap, O(V) space. Worst case degrades to Dijkstra if `h ≡ 0`.
+
+### Shortest Path and Connectivity
+
+Shortest path uses BFS parent tracking and backtracks from goal to start:
+
+```
+path = backtrack(goal → start via parent[])
+```
+
+`is_connected(a, b)` runs BFS from *a* and checks if *b* is reached. O(V + E).
+
+## Quick Start
 
 ```rust
-use ternary_search;
+use ternary_search::{StrategyGraph, bfs, dfs, beam_search, astar, Ternary};
+use ternary_types::Ternary as T;
+
+let mut g = StrategyGraph::new();
+let n0 = g.add_node(vec![T::Positive]);
+let n1 = g.add_node(vec![T::Neutral]);
+let n2 = g.add_node(vec![T::Negative, T::Positive]);
+g.add_edge(n0, n1);
+g.add_edge(n1, n2);
+
+// BFS
+let result = bfs(&g, n0);
+assert_eq!(result.distances[&n2], 2);
+
+// A*
+let result = astar(&g, n0, n2,
+    |_| 0,           // heuristic
+    |_, _| 1,        // edge cost
+).unwrap();
+assert_eq!(result.path, vec![n0, n1, n2]);
 ```
+
+## API
+
+| Function | Description |
+|----------|-------------|
+| `binary_threshold_search(lo, hi, eval)` | Find first non-negative crossover |
+| `binary_search_first_nonneg(lo, hi, pred)` | First index satisfying predicate |
+| `bfs(graph, start)` | Breadth-first traversal |
+| `dfs(graph, start)` | Depth-first traversal |
+| `beam_search(graph, start, width, depth, score_fn)` | Beam search |
+| `astar(graph, start, goal, h, edge_cost)` | A* pathfinding |
+| `shortest_path(graph, start, goal)` | BFS-based shortest path |
+| `is_connected(graph, a, b)` | Reachability check |
+
+## Architecture Notes
+
+The **γ + η = C** invariant appears in beam search: *generation* (γ) is the expansion of candidates (exploration), *entropy* (η) is the diversity of the beam (how different the *B* candidates are from each other), and *conservation* (C) is the fixed beam width *B* — the constraint that exactly *B* candidates survive each round. The truncation step enforces conservation by pruning candidates, converting generation-driven diversity into entropy-reducing selection.
+
+## References
+
+- **A* algorithm:** Hart, P., Nilsson, N. & Raphael, B. "A Formal Basis for the Heuristic Determination" (1968)
+- **Beam search:** Bisiani, R. "Beam Search" in *Encyclopedia of AI* (1987)
+- **Strategy graphs:** Marschak, J. & Radner, R. *Economic Theory of Teams* (1972)
+- **BFS/DFS:** Cormen, T. et al. *Introduction to Algorithms* (2009), Chapters 22–24
 
 ## License
 
 MIT
-![Migration](https://img.shields.io/badge/ternary_types-v0.2.0-blueviolet)
-
-## Migration
-
-This crate uses `ternary_types::Ternary` (canonical) instead of its own `enum Ternary`.
