@@ -1,38 +1,30 @@
-# PLUG_AND_PLAY — Search
+# PLUG_AND_PLAY — ternary-search
 
-> Search algorithms using ternary state spaces and strategy trees
+> *Integration guide.*
 
-## 🚀 Quick Start
-
-Add to your `Cargo.toml`:
+## Dependency
 
 ```toml
 [dependencies]
-ternary-search = { git = "https://github.com/SuperInstance/ternary-search" }
+ternary_search = "0.1.0"
 ```
 
-Use in your code:
+## Feature Flags
 
-```rust
-use ternary_search::StrategyTree;
+| Feature | Default | Description |
+|---------|---------|-------------|
+| `std` | yes | Standard library |
+| `alloc` | yes | Allocator support |
 
-let mut tree = StrategyTree::new(3);
-tree.expand();
-let best = tree.search();
+## Integration
+
+Import `ternary_search` in your project to access the functionality.
+
+```
+use ternary_search::{};
 ```
 
-## 📚 Available Documentation
+## Compatibility
 
-| Document | Description |
-|----------|-------------|
-| `docs/FROM_BINARY.md` | Understanding ternary concepts as a binary programmer |
-| `docs/MIGRATION.md` | Version migration guide |
-| `docs/FUTURE-INTEGRATION.md` | Planned features and roadmap |
-
-## 🔗 Integration
-
-This crate is part of the [SuperInstance ternary fleet](https://github.com/SuperInstance). It uses the canonical `Ternary` type from `ternary-types` for cross-crate compatibility.
-
-## 📄 License
-
-MIT
+- **Rust edition**: 2021+
+- **Targets**: All tier-1 Rust targets

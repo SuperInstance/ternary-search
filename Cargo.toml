@@ -1,6 +1,6 @@
 [package]
 name = "ternary-search"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 license = "MIT"
 description = "Search algorithms over ternary strategy spaces"
@@ -9,3 +9,4 @@ keywords = ["ternary", "search", "strategy", "beam-search", "astar"]
 categories = ["algorithms", "data-structures"]
 
 [dependencies]
+ternary-types = { git = "https://github.com/SuperInstance/ternary-types.git" }
