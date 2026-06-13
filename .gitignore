@@ -1,5 +1,6 @@
-target/
-Cargo.lock
+/target
+**/*.rs.bk
+*.pdb
 .env
-credentials.*
 *.secret
+credentials.*
